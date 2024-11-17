@@ -43,32 +43,53 @@ class OneNearestNeighbor(BaseEstimator, ClassifierMixin):
         check_classification_targets(y)
         self.classes_ = np.unique(y)
         self.n_features_in_ = X.shape[1]
+        
+        self.X_train_ = X
+        self.Y_train_ = y
 
         # XXX fix
         return self
 
     def predict(self, X):
-        """Write docstring.
-
-        And describe parameters
         """
-        check_is_fitted(self)
-        X = check_array(X)
-        y_pred = np.full(
-            shape=len(X), fill_value=self.classes_[0],
-            dtype=self.classes_.dtype
-        )
+        Predict the class labels for the provided data.
 
-        # XXX fix
-        return y_pred
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            Test samples.
+
+        Returns
+        -------
+        y_pred : ndarray of shape (n_samples,)
+            Predicted class labels for each data sample.
+        """
+        check_is_fitted(self)  # Ensure the model is fitted before predicting
+        X = check_array(X)  # Validate the input array
+
+        # Broadcasting
+        distances = np.linalg.norm(self.X_train_[None, :, :] - X[:, None, :], axis=2)
+        nearest_indices = np.argmin(distances, axis=1)
+        return self.Y_train_[nearest_indices]
 
     def score(self, X, y):
-        """Write docstring.
-
+        """
+        Return the accuracy of the model.
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            Test samples.
+        y : array-like of shape (n_samples,)
+            True labels for `X`.
         And describe parameters
+        Returns
+        -------
+        accuracy : float
+            Accuracy of the model,
+            the proportion of correctly classified samples.
         """
         X, y = check_X_y(X, y)
         y_pred = self.predict(X)
-
-        # XXX fix
-        return y_pred.sum()
+        
+        accuracy = np.mean(y_pred == y)
+        return accuracy
